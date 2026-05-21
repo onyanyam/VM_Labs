@@ -1,31 +1,65 @@
-import math
-from decimal import Decimal, getcontext
+import mpmath
+mpmath.mp.dps = 100
 
-getcontext().prec = 100
+def split_to_hi_lo(value):
+    hi = float(value)
+    lo = float(value - mpmath.mpf(hi))
+    return hi, lo
 
-pi2 = math.pi / 2
-pio2_h0 = 1.5707963267948966  # то же самое, что float(pi2)
-pio2_h1 = pi2 - pio2_h0
+def print_dd_constant(name, value):
+    hi, lo = split_to_hi_lo(value)
+    print(f"static const DDouble {name}({hi:.17e}, {lo:.17e});")
 
-print(f"PIO2_H0 = {pio2_h0:.16f}")
-print(f"PIO2_H1 = {pio2_h1:.16e}")
-print()
+def factorial_reciprocal(n):
+    return mpmath.mpf(1) / mpmath.factorial(n)
 
-two_over_pi = 2 / math.pi
-two_pi_hi = float(two_over_pi)
-two_pi_lo = float(two_over_pi - two_pi_hi)
+def generate_sin_coeffs(max_n=41):
+    coeffs = []
+    for k in range(1, max_n + 1, 2):
+        exact = factorial_reciprocal(k)
+        hi, lo = split_to_hi_lo(exact)
+        if (k // 2) % 2 == 1:
+            hi = -hi
+            lo = -lo
+        coeffs.append((hi, lo))
+    return coeffs
 
-print(f"{two_pi_hi:.16f}")
-print(f"{two_pi_lo:.16e}")
+def generate_cos_coeffs(max_n=42):
+    coeffs = []
+    for k in range(0, max_n + 1, 2):
+        if k == 0:
+            exact = mpmath.mpf(1)
+        else:
+            exact = factorial_reciprocal(k)
+        hi, lo = split_to_hi_lo(exact)
+        if (k // 2) % 2 == 1:
+            hi = -hi
+            lo = -lo
+        coeffs.append((hi, lo))
+    return coeffs
 
-print()
+def print_coeffs(coeffs, name):
+    print(f"static const DDouble {name}[] = {{")
+    for hi, lo in coeffs:
+        print(f"    {{ {hi:.17e}, {lo:.17e} }},")
+    print("};")
 
-for n in range(0, 9):
-    coeff = (-1)**n / math.factorial(2*n + 1)
-    print(f"{coeff:.17e}")
 
-print()
+if __name__ == "__main__":
+    sin_coeffs = generate_sin_coeffs(41)
+    print("// Коэффициенты синуса (1, -1/3!, +1/5!, ..., до 1/41! )")
+    print_coeffs(sin_coeffs, "sin_coeffs")
+    print()
 
-for n in range(0, 9):
-    coeff = (-1)**n / math.factorial(2*n)
-    print(f"{coeff:.17e}")
+    cos_coeffs = generate_cos_coeffs(40)
+    print("// Коэффициенты косинуса (1, -1/2!, +1/4!, ..., до 1/40! )")
+    print_coeffs(cos_coeffs, "cos_coeffs")
+    print()
+
+    print("// Константы π/2, π/4")
+    pi_2 = mpmath.pi / 2
+    print_dd_constant("DD_PI_2", pi_2)
+
+    pi_4 = mpmath.pi / 4
+    print_dd_constant("DD_PI_4", pi_4)
+    print()

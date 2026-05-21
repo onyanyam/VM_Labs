@@ -2,6 +2,7 @@
 #include <iostream>
 #include <iomanip>
 #include <string>
+#include <utility>
 
 class DDouble {
 public:
@@ -19,8 +20,7 @@ public:
     }
 };
 
-// Предвычисленные коэффициенты рядов + разбиение констант для редукции аргумента в DDouble 
-// Разбиение 2/pi на 4 части
+// 2/pi  - разбиение на 4 части
 static const double two_div_pi[] = {
     0.636619772367581343,
     5.912351290886566e-18,
@@ -28,64 +28,75 @@ static const double two_div_pi[] = {
     1.146313195287612e-51
 };
 
-// Разбиение pi/2 на 5 частей
+// pi/2 - разбиение на 5 частей
 static const double pi_div_two[] = {
-    1.570796326794896558e+00, 6.123233995736766036e-17,
-    2.022266248795950632e-33, 1.996755123683625902e-49,
+    1.570796326794896558e+00, 
+    6.123233995736766036e-17,
+    2.022266248795950632e-33, 
+    1.996755123683625902e-49,
     6.037002664545628121e-66
 };
 
-// Коэфициенты синуса для ряда Тейлора
-static const DDouble sin_coeffs[]{
-    {1.0, 0.0},
-    {-1.666666666666666574e-01,-9.251858538542971261e-18},
-    {8.3333333333333332176e-03, 1.1564823173178715840e-19},
-    {-1.98412698412698412e-04,-1.72095582934207053e-22},
-    {2.755731922398589251e-06,-1.85839327404647234e-22},
-    {-2.50521083854417202e-08, 1.448814070935912168e-24},
-    {1.605904383682161334e-10, 1.258529458875209764e-26},
-    {-7.64716373181981640e-13, -7.03872877733453034e-30},
-    {2.811457254345520598e-15, 1.650884273086143474e-31},
-    {-8.22063524662432971e-18, -2.21418941196042675e-34},
-    {1.957294106339126123e-20, -1.36435038300879101e-36},
-    {-3.86817017063068412e-23, 8.843177655482344715e-40},
-    {6.446950284384473589e-26, -1.93304042337034673e-42},
-    {-9.18368986379554600e-29, -1.43031503967873239e-45},
-    {1.130996288644771588e-31, 1.049801541295950759e-47},
-    {-1.21612504155351789e-34, -5.58629056788880660e-51},
-    {1.151633562077195089e-37, -6.09957445788454050e-54},
-    {-9.67759295863189067e-41, -3.20229554864556237e-57},
-    {7.265460179153071359e-44, -4.36409714935444624e-61},
-    {-4.90246975651354351e-47, 1.213019100517928105e-63},
-    {2.989310827142404614e-50, -1.040724770303315688e-66}
-    };
+// константы pi/2, pi/4
+static const DDouble DD_PI_2(1.57079632679489656e+00, 6.12323399573676604e-17);
+static const DDouble DD_PI_4(7.85398163397448279e-01, 3.06161699786838302e-17);
+
+// коэффициенты синуса (до 1/41!)
+static const DDouble sin_coeffs[] = {
+    { 1.00000000000000000e+00, 0.00000000000000000e+00 },
+    { -1.66666666666666657e-01, -9.25185853854297066e-18 },
+    { 8.33333333333333322e-03, 1.15648231731787138e-19 },
+    { -1.98412698412698413e-04, -1.72095582934207053e-22 },
+    { 2.75573192239858925e-06, -1.85839327404647208e-22 },
+    { -2.50521083854417202e-08, 1.44881407093591197e-24 },
+    { 1.60590438368216133e-10, 1.25852945887520981e-26 },
+    { -7.64716373181981641e-13, -7.03872877733453001e-30 },
+    { 2.81145725434552060e-15, 1.65088427308614326e-31 },
+    { -8.22063524662432950e-18, -2.21418941196042654e-34 },
+    { 1.95729410633912626e-20, -1.36435038300879085e-36 },
+    { -3.86817017063068413e-23, 8.84317765548234385e-40 },
+    { 6.44695028438447359e-26, -1.93304042337034648e-42 },
+    { -9.18368986379554601e-29, -1.43031503967873220e-45 },
+    { 1.13099628864477159e-31, 1.04980154129595060e-47 },
+    { -1.21612504155351789e-34, -5.58629056788880577e-51 },
+    { 1.15163356207719509e-37, -6.09957445788453978e-54 },
+    { -9.67759295863189067e-41, -3.20229554864556196e-57 },
+    { 7.26546017915307136e-44, -4.36409714935444569e-61 },
+    { -4.90246975651354352e-47, 1.21301910051792795e-63 },
+    { 2.98931082714240461e-50, -1.04072477030331555e-66 },
+};
     
 static const int SIN_COEFFS_COUNT = sizeof(sin_coeffs) / sizeof(sin_coeffs[0]);
 
-// Коэфициенты косинуса для ряда Тейлора
+// коэффициенты косинуса (до 1/40! )
 static const DDouble cos_coeffs[] = {
-    { 1.0, 0.0 },
-    { -5.000000000000000000e-01,  0.000000000000000000e+00 },
-    {  4.166666666666666435e-02,  2.312964634635742664e-18 },
-    { -1.388888888888888941e-03, -5.300543954373577065e-20 }, 
-    {  2.480158730158730159e-05,  2.151194786677588162e-23 },
-    { -2.755731922398588832e-07, -2.376771462225029730e-23 },
-    {  2.087675698786810015e-09, -1.207345059113259965e-25 },
-    { -1.147074559772972448e-11,  2.065551275283074542e-28 }, 
-    {  4.779477332387385250e-14,  4.399205485834081263e-31 },
-    { -1.554312234406214050e-16, -1.748367015502621006e-33 },
-    {  4.116161026367464973e-19,  2.296734139988225573e-36 },
-    { -8.866726349929881407e-22, -1.272023531649983177e-39 },
-    {  1.606290998900340866e-24, -1.258670417726487532e-41 },
-    { -2.471216921385139794e-27, -2.064434939763784110e-44 }, 
-    {  3.268798837811031473e-30, -3.208151322045558000e-47 },
-    { -3.757240043460955716e-33, -3.102604726588237581e-50 } 
+    { 1.00000000000000000e+00, 0.00000000000000000e+00 },
+    { -5.00000000000000000e-01, -0.00000000000000000e+00 },
+    { 4.16666666666666644e-02, 2.31296463463574266e-18 },
+    { -1.38888888888888894e-03, 5.30054395437357706e-20 },
+    { 2.48015873015873016e-05, 2.15119478667758816e-23 },
+    { -2.75573192239858883e-07, -2.37677146222502973e-23 },
+    { 2.08767569878681002e-09, -1.20734505911325997e-25 },
+    { -1.14707455977297245e-11, -2.06555127528307454e-28 },
+    { 4.77947733238738525e-14, 4.39920548583408126e-31 },
+    { -1.56192069685862253e-16, -1.19106796602737540e-32 },
+    { 4.11031762331216484e-19, 1.44129733786595271e-36 },
+    { -8.89679139245057408e-22, 7.91140261487237622e-38 },
+    { 1.61173757109611839e-24, -3.68465735645097660e-41 },
+    { -2.47959626322479759e-27, 1.29537309647652288e-43 },
+    { 3.27988923706983776e-30, 1.51175427440298787e-46 },
+    { -3.76998762881590539e-33, -2.58703478327503238e-49 },
+    { 3.80039075485474342e-36, 1.74571580246525180e-52 },
+    { -3.38715753552116180e-39, -5.09056148151084995e-56 },
+    { 2.68822026628663633e-42, 5.35506116594333401e-59 },
+    { -1.91196320504028195e-45, 2.78608221768831261e-62 },
+    { 1.22561743912838585e-48, 6.03392734831560539e-68 },
 };
+
 static const int COS_COEFFS_COUNT = sizeof(cos_coeffs) / sizeof(cos_coeffs[0]);
 
 
 // Вспомогательные операции с double
-
 // точное сложение двух double с остатком
 inline DDouble two_sum(double a, double b) {
     double s = a + b;
@@ -109,76 +120,73 @@ inline DDouble quick_two_sum(double a, double b) {
 }
 
 // быстрое сложение
-inline void fast2Sum(double a, double b, double &s, double &t) {
-    s = a + b;
+inline std::pair<double, double> fast_two_sum(double a, double b) {
+    double s = a + b;
     double z = s - a;
-    t = b - z;
+    double t = b - z;
+    return {s, t};
 }
 
-// точное сложение с компенсацией ошибки
-inline void is2Sum(double a, double b, double &s, double &t) {
-    s = a + b;
+// точное сложение с компенсацией
+inline std::pair<double, double> is_two_sum(double a, double b) {
+    double s = a + b;
     double a_ = s - b;
     double b_ = s - a_;
     double da = a - a_;
     double db = b - b_;
-    t = da + db;
+    double t = da + db;
+    return {s, t};
 }
 
-// разделение double на две части методом Велткампа
-inline void split(double x, double &x_hi, double &x_lo) {
-    const double C = 134217729.0; // 2^27 + 1
+// разделение Велткампа
+inline std::pair<double, double> split(double x) {
+    const double C = 134217729.0;
     double gamma = C * x;
     double delta = x - gamma;
-    x_hi = gamma + delta;
-    x_lo = x - x_hi;
+    double x_hi = gamma + delta;
+    double x_lo = x - x_hi;
+    return {x_hi, x_lo};
 }
 
-// точное произведение двух double
-inline void dekker(double x, double y, double &p_hi, double &p_lo) {
-    double x_hi, x_lo, y_hi, y_lo;
-    split(x, x_hi, x_lo);
-    split(y, y_hi, y_lo);
-    p_hi = x * y;
+// точное произведение Деккера
+inline std::pair<double, double> dekker(double x, double y) {
+    auto [x_hi, x_lo] = split(x);
+    auto [y_hi, y_lo] = split(y);
+    double p_hi = x * y;
     double t1 = -p_hi + x_hi * y_hi;
     double t2 = t1 + x_hi * y_lo;
     double t3 = t2 + x_lo * y_hi;
-    p_lo = t3 + x_lo * y_lo;
+    double p_lo = t3 + x_lo * y_lo;
+    return {p_hi, p_lo};
 }
 
-// приведение трёх чисел к нормализованной паре head+tail
-DDouble normalize3(double a0, double a1, double a2) {
-    double s, t2;
-    fast2Sum(a1, a2, s, t2);
-    double t0, t1;
-    fast2Sum(a0, s, t0, t1);
-    double b0, b1;
-    fast2Sum(t0, t1, b0, s);
-    fast2Sum(b0, s + t2, b0, b1);
-    return DDouble(b0, b1);
-}
-
-// Арифметика DDouble 
+// Основные операции
 // сложение двух double-double чисел
 DDouble add_dd(const DDouble &x, const DDouble &y) {
-    double sh, sl, th, tl, c, vh, vl, wh, zh, zl;
-    is2Sum(x.hi, y.hi, sh, sl);   // void, но sh, sl заполнятся
-    is2Sum(x.lo, y.lo, th, tl);
-    c = sl + th;
-    fast2Sum(sh, c, vh, vl);
-    wh = tl + vl;
-    fast2Sum(vh, wh, zh, zl);
+    auto [sh, sl] = is_two_sum(x.hi, y.hi);
+    auto [th, tl] = is_two_sum(x.lo, y.lo);
+    double c = sl + th;
+    auto [vh, vl] = fast_two_sum(sh, c);
+    double w = tl + vl;
+    auto [zh, zl] = fast_two_sum(vh, w);
     return DDouble(zh, zl);
 }
 
 // умножение двух double-double чисел
 DDouble mul_dd(const DDouble &x, const DDouble &y) {
-    double ph, pl;
-    dekker(x.hi, y.hi, ph, pl);
+    auto [ph, pl] = dekker(x.hi, y.hi);
     pl += x.hi * y.lo + x.lo * y.hi;
-    double zh, zl;
-    fast2Sum(ph, pl, zh, zl);
+    auto [zh, zl] = fast_two_sum(ph, pl);
     return DDouble(zh, zl);
+}
+
+// нормализация трёх чисел в нормализованную пару head+tail
+DDouble normalize3(double a0, double a1, double a2) {
+    auto [s, t2] = fast_two_sum(a1, a2);
+    auto [t0, t1] = fast_two_sum(a0, s);
+    auto [b0, s1] = fast_two_sum(t0, t1);
+    auto [b0_final, b1] = fast_two_sum(b0, s1 + t2);
+    return DDouble(b0_final, b1);
 }
 
 // смена знака double-double
@@ -192,7 +200,8 @@ DDouble div_dd(const DDouble &x, const DDouble &y) {
     DDouble p = mul_dd(DDouble(q1), y);
     DDouble r = add_dd(x, neg_dd(p));
     double q2 = r.hi / y.hi;
-    return quick_two_sum(q1, q2);
+    DDouble res = quick_two_sum(q1, q2);
+    return normalize3(res.hi, res.lo, 0.0);
 }
 
 // вычисление sin(r) через ряд Тейлора для малых r (редуцированных)
@@ -231,11 +240,12 @@ int reduce_argument(const DDouble &x, DDouble &r) {
     
     double k = std::round(x_hi * two_div_pi[0]);
     k += std::round(x_hi * two_div_pi[1] + x_lo * two_div_pi[0]);
-    int k_int = static_cast<int>(k);
-        
-    
-    double k1 = std::floor(k_int * 1e-9) * 1e9;
-    double k2 = k_int - k1;
+    k += std::round(x_hi * two_div_pi[2] + x_lo * two_div_pi[1]);
+    k += std::round(x_hi * two_div_pi[3] + x_lo * two_div_pi[2]);
+
+    long long k_int = std::llround(k);
+    double k1 = std::floor(static_cast<double>(k_int) * 1e-9) * 1e9;
+    double k2 = static_cast<double>(k_int) - k1;
     
     DDouble r_val = x;
     double parts_k[2] = {k1, k2};
@@ -246,16 +256,17 @@ int reduce_argument(const DDouble &x, DDouble &r) {
         }
     }
     
-    
-    const double PI4 = 0.7853981633974483;
+    const DDouble PI4(DD_PI_4.hi, DD_PI_4.lo);
+    const DDouble HALF_PI(DD_PI_2.hi, DD_PI_2.lo);
+
     int quad = k_int & 3;
-    DDouble half_pi(pi_div_two[0], pi_div_two[1]);
-    while (r_val.hi > PI4) {
-        r_val = add_dd(r_val, neg_dd(half_pi));
+
+   while (r_val.hi > PI4.hi || (r_val.hi == PI4.hi && r_val.lo > PI4.lo)) {
+        r_val = add_dd(r_val, neg_dd(HALF_PI));
         quad = (quad + 1) % 4;
     }
-    while (r_val.hi < -PI4) {
-        r_val = add_dd(r_val, half_pi);
+    while (r_val.hi < -PI4.hi || (r_val.hi == -PI4.hi && r_val.lo < -PI4.lo)) {
+        r_val = add_dd(r_val, HALF_PI);
         quad = (quad + 3) % 4;
     }
     
@@ -265,8 +276,13 @@ int reduce_argument(const DDouble &x, DDouble &r) {
 
 // основная функция синуса с учётом знака и квадранта
 DDouble dd_sin(const DDouble &x) {
-    // Запоминаем знак исходного аргумента
-    bool neg = (x.hi < 0.0) || (x.hi == 0.0 && x.lo < 0.0);
+
+    if (std::isnan(x.hi) || std::isinf(x.hi)) {
+        return DDouble(std::nan(""), 0.0);
+    }
+
+    // запоминаем знак исходного аргумента
+    bool neg = std::signbit(x.hi) || (x.hi == 0.0 && std::signbit(x.lo));
     DDouble abs_x = neg ? neg_dd(x) : x;
     
     DDouble r;
@@ -286,7 +302,7 @@ DDouble dd_sin(const DDouble &x) {
     return res;
 }
 
-// Вспомогательный ввод
+// вспомогательный ввод
 // НЕ поддерживает экспоненциальную форму
 DDouble string_to_dd(const std::string &s) {
     size_t dot = s.find('.');
