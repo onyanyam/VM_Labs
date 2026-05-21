@@ -38,6 +38,7 @@ static const double pi_div_two[] = {
 };
 
 // константы pi/2, pi/4
+
 static const DDouble DD_PI_2(1.57079632679489656e+00, 6.12323399573676604e-17);
 static const DDouble DD_PI_4(7.85398163397448279e-01, 3.06161699786838302e-17);
 
